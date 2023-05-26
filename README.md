@@ -5,7 +5,8 @@ Obtain a CodeArtifact repository bearer token with GitHub Actions using STS toke
 1. [Introduction](#Introduction)
 2. [Examples](#Examples)
     1. [Get Token with STS](#Get-CodeArtifact-bearer-using-AWS-STS)
-    2. [Maven Example](#Maven-Example)
+    2. [Use your own token](#Use-your-own-token-and-skip-login)
+    3. [Maven Example](#Maven-Example)
 ## Introduction
 This action will allow you to obtain a AWS CodeArtifact bearer token either using an STS token (recommended), Access Key (Not Recommended), or a Bring-Your-Own-Token approach where the AWS login action will not be called.
 
@@ -18,6 +19,18 @@ This action will allow you to obtain a AWS CodeArtifact bearer token either usin
   with:
     aws-region: us-west-2
     aws-iam-role: arn:aws:iam::123456789012:role/CodeArtifactRepo
+    domain: default
+    domain-owner: "987654321012"
+```
+
+### Use your own token and skip login
+[Manually configure AWS credentials](https://github.com/aws-actions/configure-aws-credentials). After, pass ```logged-in: true``` to the action
+```
+- name: AWS CodeArtifact STS Login Action
+  uses: olegs-repo/codeartifact-sts-login-action@v1.0.0-alpha1
+  id: code_artifact_login
+  with:
+    logged-in: true
     domain: default
     domain-owner: "987654321012"
 ```
