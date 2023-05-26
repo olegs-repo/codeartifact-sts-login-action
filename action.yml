@@ -1,0 +1,75 @@
+name: "AWS CodeArtifact STS Login Action"
+description: Obtain a CodeArtifact repository bearer token with GitHub Actions using STS token credentials
+inputs:
+  #AWS General Settings
+  aws-region:
+    description: "AWS Region to use. Eg: us-west-2"
+    type: string
+    required: true
+  aws-iam-role:
+    description: "IAM Role which has access to CodeArtifact"
+    type: string
+    required: true
+  aws-role-duration:
+    description: "How long assumed IAM role is valid"
+    type: number
+    required: false
+    default: 3600
+  #Code Artifact Domain Settings
+  domain-owner:
+    description: "CodeArtifact Domain Owner. Must be exactly 12 characters long. Use quotes to keep leading zeroes. Eg: '012345678912'"
+    required: true
+    type: string
+  domain:
+    description: "CodeArtifact Domain"
+    required: true
+    type: string
+  #AWS Login Settings
+  logged-in:
+    description: "If you have logged into AWS in a parent action/step, skip the acquire AWS credentials steps"
+    required: false
+    type: boolean
+    default: false
+  aws-access-key-id:
+    description: "Use AWS access key to login using access id method. This method is not recommended"
+    required: false
+    type: string
+    default: ""
+  aws-secret-access-key:
+    description: "Use AWS access key secret to login using access key method. This method is not recommended"
+    required: false
+    type: string
+    default: ""
+outputs:
+  codeartifact-bearer-token:
+    description: "Bearer token to access AWS CodeArtifact"
+    value: ${{ steps.codeartifact_token_acquire.outputs.codeartifact-bearer-token }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Acquire STS AWS Credentials
+      if: inputs.logged-in == 'false' && inputs.aws-access-key-id == '' && inputs.aws-access-key-secret == ''
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-region: ${{ inputs.aws-region }}
+        role-to-assume: ${{ inputs.aws-iam-role }}
+        role-duration-seconds: ${{inputs.aws-role-duration}}
+    - name: Acquire AWS Credentials using Access Key
+      if: inputs.logged-in == 'false' && inputs.aws-access-key-id != '' && inputs.aws-access-key-secret != ''
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-region: ${{ inputs.aws-region }}
+        role-to-assume: ${{ inputs.aws-iam-role }}
+        role-duration-seconds: ${{inputs.aws-role-duration}}]
+        aws-access-key-id: ${{ inputs.aws-access-key-id }}
+        aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
+    - name: Get CodeArtifact Bearer Token
+      id: codeartifact_token_acquire
+      shell: bash
+      run: |
+        echo "codeartifact-bearer-token=$(aws codeartifact get-authorization-token \
+        --domain-owner ${{ inputs.domain-owner }} \
+        --domain ${{ inputs.domain }} \
+        --query authorizationToken \
+        --output text)" >> $GITHUB_OUTPUT
